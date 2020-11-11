@@ -23,13 +23,18 @@ def browseFiles():
         x-=1
     File = File[::-1]
     FileLoc = filename
+    label_permission1.config(state="normal")
+    label_permission2.config(state="normal")
+    label_permission3.config(state="normal")    
     if label_permission1.get("1.0", END)!="\n":
         label_permission1.delete("1.0",END)
     if label_permission2.get("1.0", END)!="\n":
         label_permission2.delete("1.0",END)
     if label_permission3.get("1.0", END)!="\n":
         label_permission3.delete("1.0",END)
-
+    label_permission1.config(state=DISABLED)
+    label_permission2.config(state=DISABLED)
+    label_permission3.config(state=DISABLED)
     label_file_explorer.configure(text="APK under analysis: "+File)
     
     button_export["state"]="disable"
@@ -76,10 +81,9 @@ def apktool():
     global FileLoc 
     if not os.path.isdir(apktool_loc + "/" + File.replace('.apk', '')):
         os.system(f"cd '{apktool_loc}'; java -jar apktool.jar d '{FileLoc}'")
-
+        time.sleep(5) 
 
     File = File.replace('.apk', '')
-    time.sleep(5) 
     f = open(f"{apktool_loc}/{File}/AndroidManifest.xml", "r")
 
     label_permissions.configure(text="Permissions: Dangerous")
