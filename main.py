@@ -1,32 +1,19 @@
 from tkinter import Tk, Label, Button, filedialog, SE, SW, S, Text, END, DISABLED
 import re
 import os
-from pandas import DataFrame
 import time
 
-File = ''
 FileLoc = ''
-apktool_loc = 'D:/apktool'  # change accordingly
-df: DataFrame
+CurrLoc = os.path.dirname(os.path.abspath(__file__))
+perms: dict
 
 
-def browseFiles():
-    global apktool_loc
-    global File
+def browse_files():
+    global CurrLoc
     global FileLoc
-    File = ''
-    FileLoc = ''
     button_extract_perms["state"] = DISABLED
-    filename = filedialog.askopenfilename(title="Select a File",
-                                          filetypes=[("APK File", "*.apk")])
-
-    x = len(filename) - 1
-    while filename[x] != '/':
-        File += filename[x]
-        x -= 1
-
-    File = File[::-1]
-    FileLoc = filename
+    FileLoc = filedialog.askopenfilename(title="Select a File",
+                                         filetypes=[("APK File", "*.apk")])
     label_permission1.config(state="normal")
     label_permission2.config(state="normal")
     label_permission3.config(state="normal")
@@ -39,15 +26,14 @@ def browseFiles():
     label_permission1.config(state=DISABLED)
     label_permission2.config(state=DISABLED)
     label_permission3.config(state=DISABLED)
-    
-    label_file_explorer.configure(text="APK under analysis: " + File)
+
+    label_file_explorer.configure(text="APK under analysis: " + FileLoc)
 
     button_export["state"] = "disable"
     button_extract_perms["state"] = "normal"
 
 
 def apktool():
-    global df
     dangerous = ["android.permission.ACCEPT_HANDOVER",
                  "android.permission.ACCESS_BACKGROUND_LOCATION",
                  "android.permission.ACCESS_COARSE_LOCATION",
@@ -104,14 +90,21 @@ def apktool():
                  "android.permission.SYSTEM_ALERT_WINDOW", "android.permission.WRITE_SETTINGS",
                  "com.android.voicemail.permission.WRITE_VOICEMAIL"]
 
-    global File
-    global apktool_loc
+    global CurrLoc
     global FileLoc
-    if not os.path.isdir(apktool_loc + "/" + File.replace('.apk', '')):
-        os.system(f"powershell.exe cd '{apktool_loc}'; apktool.jar d '{FileLoc}'")
+    global perms
+
+    File = ''
+    x = len(FileLoc) - 5
+    while FileLoc[x] != '/':
+        File += FileLoc[x]
+        x -= 1
+    File = File[::-1]
+    if not os.path.isdir(rf"{CurrLoc}\{File}"):
+        print(fr"{CurrLoc}\apktool d {FileLoc} -o {CurrLoc}\{File}")
+        os.system(fr"{CurrLoc}\\apktool d {FileLoc} -o {CurrLoc}\{File}")
         time.sleep(5)
-    File = File.replace('.apk', '')
-    f = open(f"{apktool_loc}/{File}/AndroidManifest.xml", "r")
+    f = open(fr"{CurrLoc}\{File}\AndroidManifest.xml", "r")
 
     label_permissions.configure(text="Permissions: Dangerous")
     label_permissions_legend.configure(text="Signature")
@@ -148,18 +141,19 @@ def apktool():
     label_permission2.config(state=DISABLED)
     label_permission3.config(state=DISABLED)
 
-    df = DataFrame(perms, columns=['name', 'protection'])
     f.close()
     button_extract_perms["state"] = "normal"
     button_export["state"] = "normal"
 
 
-def exportCSV():
-    global df
-
-    export_file_path = filedialog.asksaveasfilename(defaultextension='.csv',
-                                                    filetypes=[("Comma Separated Value File", '*.csv')])
-    df.to_csv(export_file_path, index=False, header=True)
+def export():
+    export_file_path = filedialog.asksaveasfilename(defaultextension='.txt',
+                                                    filetypes=[("Text File", '*.txt')])
+    global perms
+    with open(export_file_path, 'w') as f:
+        f.write(str(len(perms['name']))+'\n')
+        f.write('\n'.join(perms['name']))
+        f.write('\n'.join(perms['protection']))
 
 
 window = Tk()
@@ -196,7 +190,7 @@ label_permissions_legend2.grid(row=2,
 
 button_explore = Button(window,
                         text="Browse APK",
-                        command=browseFiles)
+                        command=browse_files)
 button_explore.grid(row=1,
                     column=0,
                     sticky=SW,
@@ -219,8 +213,8 @@ button_extract_perms.grid(row=1,
 button_extract_perms["state"] = "disable"
 
 button_export = Button(window,
-                       text="Export as CSV",
-                       command=exportCSV)
+                       text="Export TXT",
+                       command=export)
 button_export.grid(row=4,
                    column=1,
                    sticky=S,

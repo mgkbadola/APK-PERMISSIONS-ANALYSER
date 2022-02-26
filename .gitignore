@@ -1,2 +1,8 @@
-env/
+venv/
 .idea/
+.vscode/
+input.txt
+output.txt
+apktool.jar
+apktool.bat
+risk calculator.exe
